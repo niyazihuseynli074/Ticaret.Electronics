@@ -1,16 +1,11 @@
-import { Search, ShoppingCart, Zap, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingCart, Zap } from 'lucide-react';
 
 interface HeaderProps {
-  search: string;
-  onSearchChange: (value: string) => void;
   cartCount: number;
   onOpenCart: () => void;
 }
 
-export default function Header({ search, onSearchChange, cartCount, onOpenCart }: HeaderProps) {
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-
+export default function Header({ cartCount, onOpenCart }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,33 +14,13 @@ export default function Header({ search, onSearchChange, cartCount, onOpenCart }
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center shadow-lg shadow-primary-500/30">
               <Zap className="w-5 h-5 text-white" fill="white" />
             </div>
-            <span className="hidden sm:block text-lg font-bold leading-tight whitespace-nowrap">
+            <span className="text-lg font-bold leading-tight whitespace-nowrap">
               <span className="text-gray-900">Ticaret</span>
               <span className="text-primary-600 ml-1.5">Electronics</span>
             </span>
           </div>
 
-          <div className="flex-1 max-w-xl hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Məhsul axtar..."
-                className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all"
-              />
-            </div>
-          </div>
-
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="Axtarış"
-            >
-              {mobileSearchOpen ? <X className="w-5 h-5 text-gray-600" /> : <Search className="w-5 h-5 text-gray-600" />}
-            </button>
             <button
               onClick={onOpenCart}
               className="relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold transition-all hover:shadow-lg active:scale-95"
@@ -60,21 +35,6 @@ export default function Header({ search, onSearchChange, cartCount, onOpenCart }
             </button>
           </div>
         </div>
-
-        {mobileSearchOpen && (
-          <div className="md:hidden pb-3 animate-fade-in">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Məhsul axtar..."
-                className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400"
-              />
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

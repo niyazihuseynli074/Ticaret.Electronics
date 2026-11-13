@@ -1,13 +1,15 @@
-import { Star, ShoppingCart, Check } from 'lucide-react';
+import { Star, ShoppingCart, Heart } from 'lucide-react';
 import type { Product } from '../types';
 import { useCart } from '../context/CartContext';
 
 interface ProductCardProps {
   product: Product;
   onView: (product: Product) => void;
+  isFavorite: boolean;
+  onToggleFavorite: (id: number) => void;
 }
 
-export default function ProductCard({ product, onView }: ProductCardProps) {
+export default function ProductCard({ product, onView, isFavorite, onToggleFavorite }: ProductCardProps) {
   const { addToCart } = useCart();
 
   const discount = product.oldPrice
@@ -35,6 +37,20 @@ export default function ProductCard({ product, onView }: ProductCardProps) {
             </span>
           )}
         </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(product.id);
+          }}
+          className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur shadow-md hover:bg-white transition-all active:scale-90"
+          aria-label="Favori"
+        >
+          <Heart
+            className={`w-4 h-4 transition-all ${
+              isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-red-400'
+            }`}
+          />
+        </button>
         {!product.inStock && (
           <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
             <span className="px-3 py-1.5 bg-gray-900 text-white text-xs rounded-full">Stokda yoxdur</span>

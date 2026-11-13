@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { SlidersHorizontal, SearchX } from 'lucide-react';
+import { SlidersHorizontal, SearchX, Search, Heart } from 'lucide-react';
 import { CartProvider, useCart } from './context/CartContext';
 import { products } from './data';
 import type { Product, Category } from './types';
@@ -13,6 +13,8 @@ import Footer from './components/Footer';
 
 type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating';
 
+const FAV_STORAGE_KEY = 'ticaret-favorites';
+
 function Shop() {
   const { totalItems } = useCart();
   const [search, setSearch] = useState('');
@@ -20,7 +22,28 @@ function Shop() {
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState<number[]>(() => {
+    try {
+      const saved = localStorage.getItem(FAV_STORAGE_KEY);
+      return saved ? JSON.parse(saved) as number[] : [];
+    } catch {
+      return [];
+    }
+  });
   const productsRef = useRef<HTMLDivElement>(null);
+
+  const toggleFavorite = (id: number) => {
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id];
+      try {
+        localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   const counts = useMemo(() => {
     const map: Record<string, number> = {};
@@ -32,6 +55,9 @@ function Shop() {
 
   const filtered = useMemo(() => {
     let list = products;
+    if (showFavoritesOnly) {
+      list = list.filter((p) => favorites.includes(p.id));
+    }
     if (activeCategory !== 'all') {
       list = list.filter((p) => p.category === activeCategory);
     }
@@ -54,7 +80,7 @@ function Shop() {
       default:
         return list;
     }
-  }, [activeCategory, search, sortBy]);
+  }, [activeCategory, search, sortBy, showFavoritesOnly, favorites]);
 
   const scrollToProducts = () => {
     productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -62,12 +88,7 @@ function Shop() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header
-        search={search}
-        onSearchChange={setSearch}
-        cartCount={totalItems}
-        onOpenCart={() => setCartOpen(true)}
-      />
+      <Header cartCount={totalItems} onOpenCart={() => setCartOpen(true)} />
 
       <main className="flex-1">
         <Hero onShopNow={scrollToProducts} />
@@ -82,6 +103,22 @@ function Shop() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFavoritesOnly((v) => !v)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95 ${
+                  showFavoritesOnly
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-white' : ''}`} />
+                <span className="hidden sm:inline">Favorilər</span>
+                {favorites.length > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${showFavoritesOnly ? 'bg-white/20' : 'bg-gray-100'}`}>
+                    {favorites.length}
+                  </span>
+                )}
+              </button>
               <SlidersHorizontal className="w-4 h-4 text-gray-400" />
               <select
                 value={sortBy}
@@ -96,6 +133,17 @@ function Shop() {
             </div>
           </div>
 
+          <div className="relative mb-6">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Məhsul axtar... (ad, brend və ya təsvir)"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all shadow-sm"
+            />
+          </div>
+
           <div className="mb-8">
             <CategoryFilter active={activeCategory} onChange={setActiveCategory} counts={counts} />
           </div>
@@ -105,13 +153,25 @@ function Shop() {
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                 <SearchX className="w-8 h-8 text-gray-300" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Məhsul tapılmadı</h3>
-              <p className="text-sm text-gray-500">Axtarış və ya filtri dəyişdirərək yenidən cəhd edin.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                {showFavoritesOnly ? 'Favori yoxdur' : 'Məhsul tapılmadı'}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {showFavoritesOnly
+                  ? 'Ürək işarəsinə klikləyərək məhsulları favorilərə əlavə edin.'
+                  : 'Axtarış və ya filtri dəyişdirərək yenidən cəhd edin.'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
               {filtered.map((product) => (
-                <ProductCard key={product.id} product={product} onView={setSelectedProduct} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onView={setSelectedProduct}
+                  isFavorite={favorites.includes(product.id)}
+                  onToggleFavorite={toggleFavorite}
+                />
               ))}
             </div>
           )}
