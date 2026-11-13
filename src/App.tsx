@@ -1,15 +1,18 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { SlidersHorizontal, SearchX, Heart } from 'lucide-react';
 import { CartProvider, useCart } from './context/CartContext';
 import { products } from './data';
 import type { Product, Category } from './types';
 import Header from './components/Header';
+import type { Page } from './components/Header';
 import Hero from './components/Hero';
 import CategoryFilter from './components/CategoryFilter';
 import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
 import Footer from './components/Footer';
+import AboutPage from './components/AboutPage';
+import CalculatorPage from './components/CalculatorPage';
 
 type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating';
 
@@ -17,6 +20,7 @@ const FAV_STORAGE_KEY = 'ticaret-favorites';
 
 function Shop() {
   const { totalItems } = useCart();
+  const [currentPage, setCurrentPage] = useState<Page>('home');
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<Category | 'all'>('all');
   const [sortBy, setSortBy] = useState<SortOption>('featured');
@@ -32,6 +36,11 @@ function Shop() {
     }
   });
   const productsRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
 
   const toggleFavorite = (id: number) => {
     setFavorites((prev) => {
@@ -83,11 +92,25 @@ function Shop() {
   }, [activeCategory, search, sortBy, showFavoritesOnly, favorites]);
 
   const scrollToProducts = () => {
-    productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (currentPage !== 'home' && currentPage !== 'products') {
+      setCurrentPage('home');
+    }
+    setTimeout(() => {
+      productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, currentPage === 'home' ? 0 : 100);
+  };
+
+  const handleNavigate = (page: Page) => {
+    setCurrentPage(page);
+    if (page === 'products' && productsRef.current) {
+      setTimeout(() => {
+        productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div ref={topRef} className="min-h-screen bg-gray-50 flex flex-col">
       <Header
         search={search}
         onSearchChange={setSearch}
@@ -96,76 +119,89 @@ function Shop() {
         favoriteCount={favorites.length}
         onToggleFavorites={() => setShowFavoritesOnly((v) => !v)}
         favoritesActive={showFavoritesOnly}
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
       />
 
       <main className="flex-1">
-        <Hero onShopNow={scrollToProducts} />
+        {/* HOME PAGE: Hero + Products */}
+        {(currentPage === 'home' || currentPage === 'products') && (
+          <>
+            {currentPage === 'home' && <Hero onShopNow={scrollToProducts} />}
 
-        <div ref={productsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 scroll-mt-16">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Məhsullar</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {filtered.length} məhsul tapıldı
-              </p>
-            </div>
+            <div ref={productsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 scroll-mt-16">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Məhsullar</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {filtered.length} məhsul tapıldı
+                  </p>
+                </div>
 
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-gray-600 border border-gray-200">
-                <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
-                <span className="hidden sm:inline">Favorilər</span>
-                {favorites.length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-gray-100">
-                    {favorites.length}
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-gray-600 border border-gray-200">
+                    <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                    <span className="hidden sm:inline">Favorilər</span>
+                    {favorites.length > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-gray-100">
+                        {favorites.length}
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-              <SlidersHorizontal className="w-4 h-4 text-gray-400" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="text-sm border border-gray-200 rounded-full px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500/30 cursor-pointer"
-              >
-                <option value="featured">Tövsiyə edilən</option>
-                <option value="price-asc">Qiymət: ucuzdan bahaya</option>
-                <option value="price-desc">Qiymət: bahadan ucuza</option>
-                <option value="rating">Ən yüksək reytinq</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <CategoryFilter active={activeCategory} onChange={setActiveCategory} counts={counts} />
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <SearchX className="w-8 h-8 text-gray-300" />
+                  <SlidersHorizontal className="w-4 h-4 text-gray-400" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="text-sm border border-gray-200 rounded-full px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500/30 cursor-pointer"
+                  >
+                    <option value="featured">Tövsiyə edilən</option>
+                    <option value="price-asc">Qiymət: ucuzdan bahaya</option>
+                    <option value="price-desc">Qiymət: bahadan ucuza</option>
+                    <option value="rating">Ən yüksək reytinq</option>
+                  </select>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                {showFavoritesOnly ? 'Favori yoxdur' : 'Məhsul tapılmadı'}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {showFavoritesOnly
-                  ? 'Ürək işarəsinə klikləyərək məhsulları favorilərə əlavə edin.'
-                  : 'Axtarış və ya filtri dəyişdirərək yenidən cəhd edin.'}
-              </p>
+
+              <div className="mb-8">
+                <CategoryFilter active={activeCategory} onChange={setActiveCategory} counts={counts} />
+              </div>
+
+              {filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                    <SearchX className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    {showFavoritesOnly ? 'Favori yoxdur' : 'Məhsul tapılmadı'}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {showFavoritesOnly
+                      ? 'Ürək işarəsinə klikləyərək məhsulları favorilərə əlavə edin.'
+                      : 'Axtarış və ya filtri dəyişdirərək yenidən cəhd edin.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                  {filtered.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onView={setSelectedProduct}
+                      isFavorite={favorites.includes(product.id)}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-              {filtered.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onView={setSelectedProduct}
-                  isFavorite={favorites.includes(product.id)}
-                  onToggleFavorite={toggleFavorite}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* ABOUT PAGE */}
+        {currentPage === 'about' && <AboutPage />}
+
+        {/* CALCULATOR PAGE */}
+        {currentPage === 'calculator' && <CalculatorPage />}
       </main>
 
       <Footer />
