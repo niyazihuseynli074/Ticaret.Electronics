@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { SlidersHorizontal, SearchX, Search, Heart } from 'lucide-react';
+import { SlidersHorizontal, SearchX, Heart } from 'lucide-react';
 import { CartProvider, useCart } from './context/CartContext';
 import { products } from './data';
 import type { Product, Category } from './types';
@@ -88,7 +88,15 @@ function Shop() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header cartCount={totalItems} onOpenCart={() => setCartOpen(true)} />
+      <Header
+        search={search}
+        onSearchChange={setSearch}
+        cartCount={totalItems}
+        onOpenCart={() => setCartOpen(true)}
+        favoriteCount={favorites.length}
+        onToggleFavorites={() => setShowFavoritesOnly((v) => !v)}
+        favoritesActive={showFavoritesOnly}
+      />
 
       <main className="flex-1">
         <Hero onShopNow={scrollToProducts} />
@@ -103,22 +111,15 @@ function Shop() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFavoritesOnly((v) => !v)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95 ${
-                  showFavoritesOnly
-                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-white' : ''}`} />
+              <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-gray-600 border border-gray-200">
+                <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
                 <span className="hidden sm:inline">Favorilər</span>
                 {favorites.length > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${showFavoritesOnly ? 'bg-white/20' : 'bg-gray-100'}`}>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-gray-100">
                     {favorites.length}
                   </span>
                 )}
-              </button>
+              </span>
               <SlidersHorizontal className="w-4 h-4 text-gray-400" />
               <select
                 value={sortBy}
@@ -131,17 +132,6 @@ function Shop() {
                 <option value="rating">Ən yüksək reytinq</option>
               </select>
             </div>
-          </div>
-
-          <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Məhsul axtar... (ad, brend və ya təsvir)"
-              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all shadow-sm"
-            />
           </div>
 
           <div className="mb-8">
